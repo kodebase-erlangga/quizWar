@@ -1,0 +1,1036 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../core/services/question_service.dart';
+import '../core/theme/app_theme.dart';
+import '../models/quiz_models.dart';
+
+class CreateQuestionScreen extends StatefulWidget {
+  const CreateQuestionScreen({super.key});
+
+  @override
+  State<CreateQuestionScreen> createState() => _CreateQuestionScreenState();
+}
+
+class _CreateQuestionScreenState extends State<CreateQuestionScreen> {
+  final QuestionService _questionService = QuestionService();
+  final _formKey = GlobalKey<FormState>();
+  final _setupFormKey = GlobalKey<FormState>();
+
+  // Controllers
+  final _questionController = TextEditingController();
+  final _explanationController = TextEditingController();
+  final _bookTitleController = TextEditingController();
+  final _pageController = TextEditingController();
+  final _pointsController = TextEditingController(text: '10');
+  final _timeController = TextEditingController(text: '15');
+
+  // Options controllers (A-E)
+  final List<TextEditingController> _optionControllers =
+      List.generate(5, (index) => TextEditingController());
+
+  // Form fields
+  String? _selectedSubject;
+  String? _selectedGrade;
+  int _correctAnswerIndex = 0;
+  bool _isLoading = false;
+  bool _isCopied = false;
+
+  // Multiple questions and batch mode
+  List<CreateQuestionModel> _questions = [];
+  int _currentQuestionNumber = 1;
+
+  // Batch creation mode - NEW FEATURE
+  bool _isSetupComplete = false;
+  String? _batchSubject;
+  String? _batchGrade;
+
+  @override
+  void dispose() {
+    _questionController.dispose();
+    _explanationController.dispose();
+    _bookTitleController.dispose();
+    _pageController.dispose();
+    _pointsController.dispose();
+    _timeController.dispose();
+    for (var controller in _optionControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _clearForm() {
+    _questionController.clear();
+    _explanationController.clear();
+    if (!_isCopied) {
+      _bookTitleController.clear();
+      _pageController.clear();
+    }
+    _pointsController.text = '10';
+    _timeController.text = '15';
+    for (var controller in _optionControllers) {
+      controller.clear();
+    }
+    setState(() {
+      _correctAnswerIndex = 0;
+      _currentQuestionNumber++;
+    });
+  }
+
+  /// NEW METHOD: Setup batch creation mode
+  void _setupBatchCreation() {
+    if (!_setupFormKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedSubject == null || _selectedGrade == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Harap pilih mata pelajaran dan kelas terlebih dahulu'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _batchSubject = _selectedSubject;
+      _batchGrade = _selectedGrade;
+      _isSetupComplete = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+            'Setup selesai! Sekarang Anda dapat menambahkan soal untuk ${_batchSubject} kelas ${_batchGrade}'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Reset batch creation
+  void _resetBatchCreation() {
+    setState(() {
+      _isSetupComplete = false;
+      _batchSubject = null;
+      _batchGrade = null;
+      _questions.clear();
+      _currentQuestionNumber = 1;
+      _selectedSubject = null;
+      _selectedGrade = null;
+    });
+
+    _clearForm();
+  }
+
+  void _addQuestionToList() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validasi tambahan untuk source jika _isCopied
+    if (_isCopied) {
+      if (_bookTitleController.text.trim().isEmpty ||
+          _pageController.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Judul buku dan halaman harus diisi untuk soal yang disalin'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User belum login'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Use batch subject and grade instead of form fields
+    final subjectToUse = _batchSubject ?? 'General';
+    final gradeToUse = _batchGrade ?? '7';
+
+    final question = CreateQuestionModel(
+      answerIndex: _correctAnswerIndex,
+      createdBy: user.uid,
+      explanation: _explanationController.text.trim(),
+      grade: gradeToUse,
+      isCopied: _isCopied,
+      number: _currentQuestionNumber,
+      options: _optionControllers
+          .map((controller) => controller.text.trim())
+          .toList(),
+      points: int.parse(_pointsController.text),
+      qid: '', // Will be generated by service
+      question: _questionController.text.trim(),
+      source: _isCopied
+          ? QuestionSource(
+              bookTitle: _bookTitleController.text.trim(),
+              page: int.parse(_pageController.text),
+              subject: subjectToUse,
+            )
+          : QuestionSource(
+              bookTitle: 'Original',
+              page: 1,
+              subject: subjectToUse,
+            ),
+      subject: subjectToUse,
+      timeSuggestionSec: int.parse(_timeController.text),
+      updatedBy: user.uid,
+    );
+
+    setState(() {
+      _questions.add(question);
+    });
+
+    _clearForm();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Soal ${_questions.length} berhasil ditambahkan!'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
+      appBar: AppBar(
+        title: Text(
+          _isSetupComplete
+              ? 'Buat Soal: ${_batchSubject} Kelas ${_batchGrade}'
+              : 'Setup Pembuatan Soal',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.primaryColor,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: _isSetupComplete
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _resetBatchCreation,
+                  tooltip: 'Reset Setup',
+                ),
+              ]
+            : null,
+      ),
+      body: _isSetupComplete ? _buildQuestionCreationForm() : _buildSetupForm(),
+    );
+  }
+
+  /// NEW METHOD: Build setup form for batch creation
+  Widget _buildSetupForm() {
+    return Form(
+      key: _setupFormKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSetupIntroCard(),
+            const SizedBox(height: 20),
+            _buildSetupBasicInfoSection(),
+            const SizedBox(height: 30),
+            _buildSetupActionButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Build question creation form (existing functionality)
+  Widget _buildQuestionCreationForm() {
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_questions.isNotEmpty) _buildQuestionCounter(),
+            const SizedBox(height: 20),
+            _buildBatchInfoCard(),
+            const SizedBox(height: 20),
+            _buildQuestionTypeSection(),
+            const SizedBox(height: 20),
+            _buildQuestionSection(),
+            const SizedBox(height: 20),
+            _buildOptionsSection(),
+            const SizedBox(height: 20),
+            _buildExplanationSection(),
+            const SizedBox(height: 20),
+            if (_isCopied) _buildSourceSection(),
+            const SizedBox(height: 20),
+            _buildAdvancedSettingsSection(),
+            const SizedBox(height: 30),
+            _buildActionButtons(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Build setup intro card
+  Widget _buildSetupIntroCard() {
+    return Card(
+      elevation: 4,
+      color: AppTheme.primaryColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              Icons.rocket_launch,
+              size: 48,
+              color: AppTheme.primaryColor,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Setup Pembuatan Soal Batch',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Pilih mata pelajaran dan kelas sekali, lalu buat multiple soal dengan mudah!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Build setup basic info section
+  Widget _buildSetupBasicInfoSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Informasi Dasar',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedSubject,
+                    decoration: const InputDecoration(
+                      labelText: 'Mata Pelajaran *',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Pilih Mata Pelajaran'),
+                      ),
+                      ..._questionService.getSubjects().map((subject) {
+                        return DropdownMenuItem(
+                          value: subject,
+                          child: Text(subject),
+                        );
+                      }).toList(),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedSubject = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Mata pelajaran harus dipilih';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedGrade,
+                    decoration: const InputDecoration(
+                      labelText: 'Kelas *',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text('Pilih Kelas'),
+                      ),
+                      ..._questionService.getGrades().map((grade) {
+                        return DropdownMenuItem(
+                          value: grade,
+                          child: Text('Kelas $grade'),
+                        );
+                      }).toList(),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedGrade = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Kelas harus dipilih';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Setelah setup, Anda dapat membuat multiple soal tanpa perlu memilih mata pelajaran dan kelas lagi untuk setiap soal',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Build setup action button
+  Widget _buildSetupActionButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton.icon(
+        onPressed: _setupBatchCreation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.primaryColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: const Icon(Icons.play_arrow, color: Colors.white),
+        label: const Text(
+          'Mulai Membuat Soal',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// NEW METHOD: Build batch info card
+  Widget _buildBatchInfoCard() {
+    return Card(
+      elevation: 4,
+      color: AppTheme.primaryColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.school, color: AppTheme.primaryColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Mata Pelajaran: ${_batchSubject}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                  Text(
+                    'Kelas: ${_batchGrade}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppTheme.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_questions.isNotEmpty)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_questions.length} soal',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionCounter() {
+    return Card(
+      elevation: 4,
+      color: AppTheme.primaryColor.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.quiz, color: AppTheme.primaryColor),
+            const SizedBox(width: 8),
+            Text(
+              'Soal yang sudah ditambahkan: ${_questions.length}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              'Soal ke-$_currentQuestionNumber',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionTypeSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tipe Soal',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('Pembuat Soal'),
+                    subtitle: const Text('Soal original'),
+                    value: false,
+                    groupValue: _isCopied,
+                    onChanged: (value) {
+                      setState(() {
+                        _isCopied = value!;
+                        if (!_isCopied) {
+                          _bookTitleController.clear();
+                          _pageController.clear();
+                        }
+                      });
+                    },
+                    activeColor: AppTheme.primaryColor,
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<bool>(
+                    title: const Text('Penyalin Soal'),
+                    subtitle: const Text('Dari buku/sumber'),
+                    value: true,
+                    groupValue: _isCopied,
+                    onChanged: (value) {
+                      setState(() {
+                        _isCopied = value!;
+                      });
+                    },
+                    activeColor: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pertanyaan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _questionController,
+              decoration: const InputDecoration(
+                labelText: 'Tulis pertanyaan...',
+                border: OutlineInputBorder(),
+                alignLabelWithHint: true,
+              ),
+              maxLines: 3,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Pertanyaan tidak boleh kosong';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionsSection() {
+    const List<String> optionLabels = ['A', 'B', 'C', 'D', 'E'];
+
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pilihan Jawaban',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...List.generate(5, (index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Radio<int>(
+                      value: index,
+                      groupValue: _correctAnswerIndex,
+                      onChanged: (value) {
+                        setState(() {
+                          _correctAnswerIndex = value!;
+                        });
+                      },
+                      activeColor: AppTheme.primaryColor,
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _optionControllers[index],
+                        decoration: InputDecoration(
+                          labelText: 'Pilihan ${optionLabels[index]}',
+                          border: const OutlineInputBorder(),
+                          filled: _correctAnswerIndex == index,
+                          fillColor: _correctAnswerIndex == index
+                              ? AppTheme.primaryColor.withOpacity(0.1)
+                              : null,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Pilihan ${optionLabels[index]} tidak boleh kosong';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Pilih jawaban yang benar dengan mengetuk radio button di sebelah kiri',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExplanationSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Penjelasan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _explanationController,
+              decoration: const InputDecoration(
+                labelText: 'Penjelasan jawaban...',
+                border: OutlineInputBorder(),
+                alignLabelWithHint: true,
+              ),
+              maxLines: 3,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Penjelasan tidak boleh kosong';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.book, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                Text(
+                  'Sumber Soal',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _bookTitleController,
+              decoration: const InputDecoration(
+                labelText: 'Judul Buku/Sumber *',
+                border: OutlineInputBorder(),
+                helperText: 'Wajib diisi untuk soal yang disalin',
+              ),
+              validator: (value) {
+                if (_isCopied && (value == null || value.trim().isEmpty)) {
+                  return 'Judul buku wajib diisi untuk soal yang disalin';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _pageController,
+              decoration: const InputDecoration(
+                labelText: 'Halaman *',
+                border: OutlineInputBorder(),
+                helperText: 'Wajib diisi untuk soal yang disalin',
+              ),
+              keyboardType: TextInputType.number,
+              validator: (value) {
+                if (_isCopied) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Halaman wajib diisi untuk soal yang disalin';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Halaman harus berupa angka';
+                  }
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedSettingsSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Pengaturan Lanjutan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _pointsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Poin',
+                      border: OutlineInputBorder(),
+                      suffixText: 'poin',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Poin tidak boleh kosong';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Poin harus berupa angka';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _timeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Waktu',
+                      border: OutlineInputBorder(),
+                      suffixText: 'detik',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Waktu tidak boleh kosong';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Waktu harus berupa angka';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        // Tombol Tambah Soal
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton.icon(
+            onPressed: _addQuestionToList,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.secondaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: Text(
+              _questions.isEmpty ? 'Tambah Soal Pertama' : 'Tambah Soal Lagi',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+        if (_questions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          // Tombol Simpan Semua
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _submitAllQuestions,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.save, color: Colors.white),
+              label: Text(
+                _isLoading
+                    ? 'Menyimpan...'
+                    : 'Simpan Semua Soal (${_questions.length})',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _submitAllQuestions() async {
+    if (_questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Tidak ada soal untuk disimpan'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      int successCount = 0;
+      for (int i = 0; i < _questions.length; i++) {
+        await _questionService.createQuestion(_questions[i]);
+        successCount++;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$successCount soal berhasil disimpan!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pop(context, true); // Return true to indicate success
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan soal: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+}

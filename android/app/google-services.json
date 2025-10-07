@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "770807191577",
+    "project_id": "quiz-war-4257f",
+    "storage_bucket": "quiz-war-4257f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770807191577:android:4fea049a03124a0230f288",
+        "android_client_info": {
+          "package_name": "com.example.quizwar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770807191577-eqkg8obcve42li6tn8guvn1nhm52odh2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.quizwar",
+            "certificate_hash": "f5d780603129311f04d41824645d35db026a893e"
+          }
+        },
+        {
+          "client_id": "770807191577-sjttp85qavguqkk8eojh60t1rblil27n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtGRbrEFvU4DAPhSdHgvQlT8RPtSNLqGU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770807191577-sjttp85qavguqkk8eojh60t1rblil27n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

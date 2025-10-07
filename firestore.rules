@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // USERS
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update, delete: if isOwner(uid);
+      
+      // FRIENDS sub-collection - Temporarily more permissive for debugging
+      match /friends/{friendUid} {
+        allow read, create, update, delete: if signedIn();
+      }
+    }
+
+    // NICKNAMES (unik per nicknameLower)
+    match /nicknames/{nick} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && !exists(/databases/$(db)/documents/nicknames/$(nick));
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    // FRIEND REQUESTS - Made more permissive for debugging
+    match /friendRequests/{id} {
+      // Allow reading all friend requests for signed in users
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid != request.auth.uid
+        && exists(/databases/$(db)/documents/users/$(request.resource.data.toUid))
+        && request.resource.data.status == "pending";
+
+      allow update: if signedIn()
+        && resource.data.toUid == request.auth.uid
+        && request.resource.data.fromUid == resource.data.fromUid
+        && request.resource.data.toUid == resource.data.toUid
+        && (
+          (resource.data.status == "pending" && request.resource.data.status == "accepted") ||
+          (resource.data.status == "pending" && request.resource.data.status == "rejected")
+        )
+        && request.resource.data.actedAt is timestamp;
+
+      allow delete: if false;
+    }
+
+    // QUESTION BANKS - Allow access for all signed-in users
+    match /questionBanks/{bankId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn(); // Allow signed-in users to create/update banks
+      allow delete: if false; // Prevent deletion of banks
+      
+      // Question items within banks
+      match /items/{itemId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid; // Allow creating questions
+        allow update: if signedIn() && resource.data.createdBy == request.auth.uid; // Allow updating own questions
+        allow delete: if signedIn() && resource.data.createdBy == request.auth.uid; // Allow deleting own questions
+      }
+    }
+
+    // CHALLENGES - Challenge system between friends
+    match /challenges/{challengeId} {
+      // Allow reading challenges where user is challenger or challenged
+      allow read: if signedIn() && (
+        resource.data.challengerId == request.auth.uid ||
+        resource.data.challengedId == request.auth.uid
+      );
+      
+      // Allow creating challenges if user is the challenger
+      allow create: if signedIn() && 
+        request.resource.data.challengerId == request.auth.uid &&
+        request.resource.data.challengedId != request.auth.uid &&
+        request.resource.data.status == "pending" &&
+        exists(/databases/$(db)/documents/users/$(request.resource.data.challengedId));
+      
+      // Allow updating challenges
+      allow update: if signedIn() && (
+        // Challenger can update their own challenges (e.g., cancel)
+        resource.data.challengerId == request.auth.uid ||
+        // Challenged user can accept or reject pending challenges
+        (resource.data.challengedId == request.auth.uid &&
+         resource.data.status == "pending" &&
+         request.resource.data.status in ["accepted", "rejected"])
+      );
+      
+      allow delete: if false; // Prevent deletion of challenges
+    }
+
+    // DUELS - Real-time duel sessions
+    match /duels/{duelId} {
+      // Allow reading duels where user is participant
+      allow read: if signedIn() && (
+        resource.data.challengerId == request.auth.uid ||
+        resource.data.challengedId == request.auth.uid
+      );
+      
+      // Allow creating duels (typically done by challenge service)
+      allow create: if signedIn() && (
+        request.resource.data.challengerId == request.auth.uid ||
+        request.resource.data.challengedId == request.auth.uid
+      );
+      
+      // Allow updating duels for participants (to submit answers, update scores)
+      allow update: if signedIn() && (
+        resource.data.challengerId == request.auth.uid ||
+        resource.data.challengedId == request.auth.uid
+      );
+      
+      allow delete: if false; // Prevent deletion of duels
+    }
+  }
+}

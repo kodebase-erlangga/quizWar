@@ -1,0 +1,137 @@
+{
+  "category": "Movies",
+  "description": "Test your knowledge about films, actors, and cinema",
+  "difficulty": "mixed",
+  "questions": [
+    {
+      "id": "movie_001",
+      "question": "Which movie won the Academy Award for Best Picture in 2020?",
+      "options": [
+        "1917",
+        "Joker",
+        "Parasite",
+        "Once Upon a Time in Hollywood"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Parasite, the South Korean film directed by Bong Joon-ho, won Best Picture in 2020.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "movie_002",
+      "question": "Who directed the movie 'Titanic'?",
+      "options": [
+        "Steven Spielberg",
+        "James Cameron",
+        "Christopher Nolan",
+        "Martin Scorsese"
+      ],
+      "correctAnswer": 1,
+      "explanation": "James Cameron directed Titanic (1997), which became one of the highest-grossing films of all time.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_003",
+      "question": "Which Indonesian movie tells the story of 'Laskar Pelangi'?",
+      "options": [
+        "The Raid",
+        "Pengabdi Setan",
+        "Laskar Pelangi",
+        "Ada Apa Dengan Cinta"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Laskar Pelangi (2008) is an Indonesian film based on the novel by Andrea Hirata.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_004",
+      "question": "In which movie series would you find the character 'Luke Skywalker'?",
+      "options": [
+        "Star Trek",
+        "Star Wars",
+        "Guardians of the Galaxy",
+        "Blade Runner"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Luke Skywalker is a main character in the Star Wars movie series.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_005",
+      "question": "Which animated movie features the song 'Let It Go'?",
+      "options": [
+        "Moana",
+        "Frozen",
+        "Tangled",
+        "The Little Mermaid"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'Let It Go' is the famous song from Disney's Frozen (2013), sung by Elsa.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_006",
+      "question": "Who played the character of Jack Sparrow?",
+      "options": [
+        "Johnny Depp",
+        "Orlando Bloom",
+        "Keira Knightley",
+        "Geoffrey Rush"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Johnny Depp played the iconic character Jack Sparrow in the Pirates of the Caribbean series.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_007",
+      "question": "Which Indonesian director is known for 'The Raid' series?",
+      "options": [
+        "Joko Anwar",
+        "Gareth Evans",
+        "Hanung Bramantyo",
+        "Nia Dinata"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Gareth Evans, a Welsh director working in Indonesia, directed The Raid series.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "movie_008",
+      "question": "What is the highest-grossing movie of all time (as of 2023)?",
+      "options": [
+        "Avengers: Endgame",
+        "Avatar",
+        "Titanic",
+        "Star Wars: The Force Awakens"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Avatar (2009) reclaimed the top spot after its re-release, becoming the highest-grossing film.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "movie_009",
+      "question": "Which movie features the famous quote 'May the Force be with you'?",
+      "options": [
+        "Star Trek",
+        "Star Wars",
+        "Stargate",
+        "Star Wars"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'May the Force be with you' is an iconic quote from the Star Wars franchise.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "movie_010",
+      "question": "Who composed the music for most of Steven Spielberg's movies?",
+      "options": [
+        "Hans Zimmer",
+        "John Williams",
+        "Danny Elfman",
+        "Alan Silvestri"
+      ],
+      "correctAnswer": 1,
+      "explanation": "John Williams has composed music for many Spielberg films including Jaws, E.T., and Indiana Jones.",
+      "difficulty": "medium"
+    }
+  ]
+}

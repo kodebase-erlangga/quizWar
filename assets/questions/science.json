@@ -1,0 +1,137 @@
+{
+  "category": "Science",
+  "description": "Test your knowledge of basic science concepts",
+  "difficulty": "mixed",
+  "questions": [
+    {
+      "id": "sci_001",
+      "question": "What is the chemical symbol for water?",
+      "options": [
+        "H2O",
+        "CO2",
+        "O2",
+        "H2SO4"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Water is composed of two hydrogen atoms and one oxygen atom, hence H2O.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci_002",
+      "question": "Which planet is known as the Red Planet?",
+      "options": [
+        "Venus",
+        "Mars",
+        "Jupiter",
+        "Saturn"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Mars is called the Red Planet because of its reddish appearance caused by iron oxide on its surface.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci_003",
+      "question": "What is the speed of light in vacuum?",
+      "options": [
+        "299,792,458 m/s",
+        "300,000,000 m/s",
+        "150,000,000 m/s",
+        "200,000,000 m/s"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The speed of light in vacuum is exactly 299,792,458 meters per second.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci_004",
+      "question": "Which blood type is known as the universal donor?",
+      "options": [
+        "A+",
+        "B+",
+        "AB+",
+        "O-"
+      ],
+      "correctAnswer": 3,
+      "explanation": "O- blood type can be given to people with any blood type, making it the universal donor.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci_005",
+      "question": "What is the powerhouse of the cell?",
+      "options": [
+        "Nucleus",
+        "Mitochondria",
+        "Ribosome",
+        "Endoplasmic Reticulum"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Mitochondria are called the powerhouse of the cell because they produce ATP, the energy currency of cells.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci_006",
+      "question": "What is the atomic number of carbon?",
+      "options": [
+        "4",
+        "6",
+        "8",
+        "12"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Carbon has 6 protons in its nucleus, giving it an atomic number of 6.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci_007",
+      "question": "Which gas makes up approximately 78% of Earth's atmosphere?",
+      "options": [
+        "Oxygen",
+        "Carbon Dioxide",
+        "Nitrogen",
+        "Argon"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Nitrogen makes up about 78% of Earth's atmosphere, while oxygen makes up about 21%.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sci_008",
+      "question": "What is the hardest natural substance on Earth?",
+      "options": [
+        "Gold",
+        "Iron",
+        "Diamond",
+        "Quartz"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Diamond is the hardest naturally occurring substance, rating 10 on the Mohs scale.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci_009",
+      "question": "Which scientist developed the theory of relativity?",
+      "options": [
+        "Isaac Newton",
+        "Albert Einstein",
+        "Galileo Galilei",
+        "Stephen Hawking"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Albert Einstein developed both the special and general theories of relativity.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sci_010",
+      "question": "What is the pH of pure water at 25°C?",
+      "options": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Pure water has a pH of 7, which is considered neutral (neither acidic nor basic).",
+      "difficulty": "medium"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "math7-main": {
+    "name": "Matematika Kelas 7",
+    "description": "Soal matematika untuk kelas 7 SMP",
+    "subject": "Matematika",
+    "grade": "Kelas 7",
+    "totalQuestions": 3,
+    "createdAt": "2024-10-03T10:00:00Z",
+    "items": {
+      "M7_ALJ_001": {
+        "question": "Berapakah hasil dari 2 + 3 × 4?",
+        "options": [
+          "14",
+          "20",
+          "12",
+          "24"
+        ],
+        "correctAnswer": 0,
+        "explanation": "Sesuai urutan operasi, perkalian dikerjakan lebih dulu: 3 × 4 = 12, kemudian 2 + 12 = 14",
+        "difficulty": "mudah",
+        "subject": "Aljabar"
+      },
+      "M7_ALJ_002": {
+        "question": "Jika x = 5, maka nilai dari 2x + 3 adalah...",
+        "options": [
+          "10",
+          "13",
+          "8",
+          "15"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Substitusi x = 5 ke dalam 2x + 3: 2(5) + 3 = 10 + 3 = 13",
+        "difficulty": "mudah",
+        "subject": "Aljabar"
+      },
+      "M7_ALJ_003": {
+        "question": "Manakah yang merupakan suku sejenis dengan 3x²?",
+        "options": [
+          "5x",
+          "-2x²",
+          "3y²",
+          "x³"
+        ],
+        "correctAnswer": 1,
+        "explanation": "Suku sejenis memiliki variabel dan pangkat yang sama. -2x² memiliki variabel x dengan pangkat 2, sama seperti 3x²",
+        "difficulty": "sedang",
+        "subject": "Aljabar"
+      }
+    }
+  }
+}

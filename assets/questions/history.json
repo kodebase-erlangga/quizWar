@@ -1,0 +1,137 @@
+{
+  "category": "History",
+  "description": "Explore important events and figures from world history",
+  "difficulty": "mixed",
+  "questions": [
+    {
+      "id": "hist_001",
+      "question": "In which year did World War II end?",
+      "options": [
+        "1944",
+        "1945",
+        "1946",
+        "1947"
+      ],
+      "correctAnswer": 1,
+      "explanation": "World War II ended in 1945 with the surrender of Japan in September.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "hist_002",
+      "question": "Who was the first President of the United States?",
+      "options": [
+        "Thomas Jefferson",
+        "John Adams",
+        "George Washington",
+        "Benjamin Franklin"
+      ],
+      "correctAnswer": 2,
+      "explanation": "George Washington served as the first President of the United States from 1789 to 1797.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "hist_003",
+      "question": "Which ancient wonder of the world was located in Alexandria?",
+      "options": [
+        "Hanging Gardens of Babylon",
+        "Lighthouse of Alexandria",
+        "Colossus of Rhodes",
+        "Statue of Zeus at Olympia"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Lighthouse of Alexandria (Pharos of Alexandria) was one of the Seven Wonders of the Ancient World.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "hist_004",
+      "question": "When did Indonesia declare its independence?",
+      "options": [
+        "August 17, 1945",
+        "August 17, 1944",
+        "August 17, 1946",
+        "August 17, 1947"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Indonesia declared its independence on August 17, 1945, proclaimed by Sukarno and Mohammad Hatta.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "hist_005",
+      "question": "Which empire was ruled by Julius Caesar?",
+      "options": [
+        "Greek Empire",
+        "Roman Empire",
+        "Persian Empire",
+        "Byzantine Empire"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Julius Caesar was a Roman general and statesman who played a critical role in the Roman Empire.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "hist_006",
+      "question": "In which year did the Berlin Wall fall?",
+      "options": [
+        "1987",
+        "1988",
+        "1989",
+        "1990"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The Berlin Wall fell on November 9, 1989, marking the beginning of German reunification.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "hist_007",
+      "question": "Who was known as the 'Iron Lady'?",
+      "options": [
+        "Queen Elizabeth II",
+        "Margaret Thatcher",
+        "Indira Gandhi",
+        "Golda Meir"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Margaret Thatcher, the former British Prime Minister, was nicknamed the 'Iron Lady'.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "hist_008",
+      "question": "Which Indonesian hero is known as the 'Father of Indonesian Independence'?",
+      "options": [
+        "Mohammad Hatta",
+        "Sukarno",
+        "Sutan Sjahrir",
+        "Tan Malaka"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Sukarno was Indonesia's first president and is known as the Father of Indonesian Independence.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "hist_009",
+      "question": "When did the Majapahit Kingdom reach its peak?",
+      "options": [
+        "13th century",
+        "14th century",
+        "15th century",
+        "16th century"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Majapahit Kingdom reached its peak in the 14th century under Hayam Wuruk.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "hist_010",
+      "question": "Which European country first colonized Indonesia?",
+      "options": [
+        "Portugal",
+        "Netherlands",
+        "Spain",
+        "Britain"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Netherlands (Dutch) was the primary European colonial power in Indonesia for over 3 centuries.",
+      "difficulty": "easy"
+    }
+  ]
+}

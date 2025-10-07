@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Firebase Configuration -->
+    <string name="default_web_client_id" translatable="false">770807191577-sjttp85qavguqkk8eojh60t1rblil27n.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://quiz-war-4257f-default-rtdb.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">770807191577</string>
+    <string name="google_api_key" translatable="false">AIzaSyCtGRbrEFvU4DAPhSdHgvQlT8RPtSNLqGU</string>
+    <string name="google_app_id" translatable="false">1:770807191577:android:4fea049a03124a0230f288</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCtGRbrEFvU4DAPhSdHgvQlT8RPtSNLqGU</string>
+    <string name="google_storage_bucket" translatable="false">quiz-war-4257f.firebasestorage.app</string>
+    <string name="project_id" translatable="false">quiz-war-4257f</string>
+</resources>

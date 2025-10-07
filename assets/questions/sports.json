@@ -1,0 +1,137 @@
+{
+  "category": "Sports",
+  "description": "Test your knowledge about various sports and athletes",
+  "difficulty": "mixed",
+  "questions": [
+    {
+      "id": "sport_001",
+      "question": "How many players are there in a football (soccer) team on the field?",
+      "options": [
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A football team has 11 players on the field at any given time, including the goalkeeper.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sport_002",
+      "question": "In which sport would you perform a slam dunk?",
+      "options": [
+        "Volleyball",
+        "Tennis",
+        "Basketball",
+        "Badminton"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A slam dunk is a basketball move where a player jumps and forcefully puts the ball through the hoop.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sport_003",
+      "question": "Who holds the record for the most Olympic gold medals?",
+      "options": [
+        "Usain Bolt",
+        "Michael Phelps",
+        "Carl Lewis",
+        "Mark Spitz"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Michael Phelps holds the record with 23 Olympic gold medals in swimming.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sport_004",
+      "question": "Which Indonesian badminton player is known as the 'King of Badminton'?",
+      "options": [
+        "Taufik Hidayat",
+        "Sony Dwi Kuncoro",
+        "Rudy Hartono",
+        "Liem Swie King"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Rudy Hartono won the All England Championships 8 times and is considered a legend in badminton.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sport_005",
+      "question": "In tennis, what is the term for a score of zero?",
+      "options": [
+        "Love",
+        "Deuce",
+        "Ace",
+        "Set"
+      ],
+      "correctAnswer": 0,
+      "explanation": "In tennis, a score of zero is called 'love', possibly derived from the French word 'l'oeuf' (egg).",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sport_006",
+      "question": "Which country hosted the 2018 FIFA World Cup?",
+      "options": [
+        "Brazil",
+        "Germany",
+        "Russia",
+        "France"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Russia hosted the 2018 FIFA World Cup, with matches played in 11 cities.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sport_007",
+      "question": "What is the maximum score possible in ten-pin bowling?",
+      "options": [
+        "250",
+        "280",
+        "300",
+        "350"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The maximum score in ten-pin bowling is 300, achieved by bowling 12 strikes in a row.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sport_008",
+      "question": "Which Indonesian footballer is known as 'Bambang Pamungkas'?",
+      "options": [
+        "The Lion King",
+        "Bepe",
+        "The Goal Machine",
+        "The Captain"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Bambang Pamungkas is commonly known as 'Bepe' and is a legendary Indonesian footballer.",
+      "difficulty": "medium"
+    },
+    {
+      "id": "sport_009",
+      "question": "In which sport do you use a shuttlecock?",
+      "options": [
+        "Tennis",
+        "Table Tennis",
+        "Badminton",
+        "Squash"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Badminton uses a shuttlecock (or birdie) instead of a ball.",
+      "difficulty": "easy"
+    },
+    {
+      "id": "sport_010",
+      "question": "How often are the Summer Olympic Games held?",
+      "options": [
+        "Every 2 years",
+        "Every 3 years",
+        "Every 4 years",
+        "Every 5 years"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The Summer Olympic Games are held every 4 years, alternating with the Winter Olympics.",
+      "difficulty": "easy"
+    }
+  ]
+}
