@@ -59,6 +59,13 @@ class _HomeScreenState extends State<HomeScreen>
     _loadUserData();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh user data when screen becomes active again
+    _loadUserData();
+  }
+
   void _initializeAnimations() {
     _animationController = AnimationController(
       duration: AppConstants.mediumAnimation,
@@ -84,9 +91,26 @@ class _HomeScreenState extends State<HomeScreen>
     _animationController.forward();
   }
 
-  void _loadUserData() {
-    _currentUser = _authService.currentUser;
-    setState(() {});
+  Future<void> _loadUserData() async {
+    try {
+      // Refresh the auth service state first
+      await _authService.refreshUserData();
+
+      // Get the updated current user
+      _currentUser = _authService.currentUser;
+
+      // Update the UI
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      // Fallback to current user data
+      _currentUser = _authService.currentUser;
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   Future<void> _handleSignOut() async {
@@ -125,7 +149,8 @@ class _HomeScreenState extends State<HomeScreen>
       final account = await _authService.linkWithGoogle();
       if (account != null && mounted) {
         _showSuccessMessage(AppConstants.accountLinkedSuccess);
-        _loadUserData(); // Refresh user data
+        // Refresh user data after successful linking
+        await _loadUserData();
       }
     } catch (e) {
       if (mounted) {
@@ -328,7 +353,9 @@ class _HomeScreenState extends State<HomeScreen>
                 Text(
                   _authService.isAnonymous
                       ? 'Guest User'
-                      : _currentUser?.displayName ?? 'User',
+                      : _authService.userDisplayName ??
+                          _currentUser?.displayName ??
+                          'User',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -357,15 +384,7 @@ class _HomeScreenState extends State<HomeScreen>
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(23),
-                child: _currentUser?.photoUrl != null
-                    ? Image.network(
-                        _currentUser!.photoUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildDefaultAvatar();
-                        },
-                      )
-                    : _buildDefaultAvatar(),
+                child: _buildProfileImage(),
               ),
             ),
           ),
@@ -385,6 +404,42 @@ class _HomeScreenState extends State<HomeScreen>
         size: 24,
       ),
     );
+  }
+
+  Widget _buildProfileImage() {
+    // Get photo URL from auth service with fallback to current user
+    final String? photoUrl =
+        _authService.userPhotoUrl ?? _currentUser?.photoUrl;
+
+    if (photoUrl != null && photoUrl.isNotEmpty) {
+      return Image.network(
+        photoUrl,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) {
+          return _buildDefaultAvatar();
+        },
+      );
+    }
+
+    return _buildDefaultAvatar();
   }
 
   Widget _buildBody() {

@@ -251,6 +251,25 @@ class AuthService {
       return null;
     }
   }
+
+  /// Refresh user data from Google and Firebase
+  Future<void> refreshUserData() async {
+    try {
+      // First try to silently sign in to refresh Google data
+      if (!isAnonymous && currentUser != null) {
+        await _googleSignIn.signInSilently();
+      }
+
+      // Reload Firebase user data
+      final firebaseUser = _firebaseAuth.currentUser;
+      if (firebaseUser != null && !firebaseUser.isAnonymous) {
+        await firebaseUser.reload();
+      }
+    } catch (error) {
+      // If refresh fails, we'll continue with existing data
+      print('Failed to refresh user data: $error');
+    }
+  }
 }
 
 /// Custom exception class for authentication errors

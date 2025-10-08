@@ -32,6 +32,13 @@ class _DuelResultScreenState extends State<DuelResultScreen>
   List<QuizQuestion> _questions = [];
   bool _isLoading = true;
 
+  // Statistics from database
+  int _challengerCorrectAnswers = 0;
+  int _challengedCorrectAnswers = 0;
+  int _totalQuestions = 0;
+  double _challengerPercentage = 0.0;
+  double _challengedPercentage = 0.0;
+
   @override
   void initState() {
     super.initState();
@@ -90,6 +97,20 @@ class _DuelResultScreenState extends State<DuelResultScreen>
       print('🏆 Winner ID: ${duelData['winnerId']}');
       print('👤 Challenger ID: ${duelData['challengerId']}');
       print('👤 Challenged ID: ${duelData['challengedId']}');
+
+      // Load statistics
+      _challengerCorrectAnswers = duelData['challengerCorrectAnswers'] ?? 0;
+      _challengedCorrectAnswers = duelData['challengedCorrectAnswers'] ?? 0;
+      _totalQuestions = duelData['challengerTotalQuestions'] ??
+          duelData['challengedTotalQuestions'] ??
+          5;
+      _challengerPercentage = duelData['challengerPercentage'] ?? 0.0;
+      _challengedPercentage = duelData['challengedPercentage'] ?? 0.0;
+
+      print(
+          '📈 Challenger: $_challengerCorrectAnswers/$_totalQuestions (${_challengerPercentage.toStringAsFixed(1)}%)');
+      print(
+          '📈 Challenged: $_challengedCorrectAnswers/$_totalQuestions (${_challengedPercentage.toStringAsFixed(1)}%)');
 
       // Create DuelSession from DuelRoom data structure
       final duelSession = DuelSession(
@@ -255,6 +276,34 @@ class _DuelResultScreenState extends State<DuelResultScreen>
     return isChallenger
         ? _duelSession!.challengerScore ?? 0
         : _duelSession!.challengedScore ?? 0;
+  }
+
+  /// Get current user correct answers
+  int get _userCorrectAnswers {
+    if (_duelSession == null) return 0;
+    final isChallenger = _currentUserId == _duelSession!.challengerId;
+    return isChallenger ? _challengerCorrectAnswers : _challengedCorrectAnswers;
+  }
+
+  /// Get current user percentage
+  double get _userPercentage {
+    if (_duelSession == null) return 0.0;
+    final isChallenger = _currentUserId == _duelSession!.challengerId;
+    return isChallenger ? _challengerPercentage : _challengedPercentage;
+  }
+
+  /// Get opponent correct answers
+  int get _opponentCorrectAnswers {
+    if (_duelSession == null) return 0;
+    final isChallenger = _currentUserId == _duelSession!.challengerId;
+    return isChallenger ? _challengedCorrectAnswers : _challengerCorrectAnswers;
+  }
+
+  /// Get opponent percentage
+  double get _opponentPercentage {
+    if (_duelSession == null) return 0.0;
+    final isChallenger = _currentUserId == _duelSession!.challengerId;
+    return isChallenger ? _challengedPercentage : _challengerPercentage;
   }
 
   @override
@@ -465,7 +514,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
                 children: [
                   const TextSpan(text: 'Skor: '),
                   TextSpan(
-                    text: '$_userScore',
+                    text: '$_userCorrectAnswers/$_totalQuestions',
                     style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
@@ -473,7 +522,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
                   ),
                   const TextSpan(text: ' vs '),
                   TextSpan(
-                    text: '$_opponentScore',
+                    text: '$_opponentCorrectAnswers/$_totalQuestions',
                     style: const TextStyle(
                       color: AppTheme.textPrimary,
                       fontWeight: FontWeight.bold,
@@ -489,12 +538,6 @@ class _DuelResultScreenState extends State<DuelResultScreen>
   }
 
   Widget _buildScoreComparison() {
-    final totalQuestions = _questions.length;
-    final userPercentage =
-        totalQuestions > 0 ? (_userScore / totalQuestions) : 0.0;
-    final opponentPercentage =
-        totalQuestions > 0 ? (_opponentScore / totalQuestions) : 0.0;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -533,7 +576,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
                     ),
                   ),
                   Text(
-                    '$_userScore/$totalQuestions (${(userPercentage * 100).toInt()}%)',
+                    '$_userCorrectAnswers/$_totalQuestions (${_userPercentage.toStringAsFixed(1)}%)',
                     style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
@@ -543,7 +586,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: userPercentage,
+                value: _userPercentage / 100,
                 backgroundColor: Colors.white.withOpacity(0.2),
                 valueColor:
                     AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
@@ -569,7 +612,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
                     ),
                   ),
                   Text(
-                    '$_opponentScore/$totalQuestions (${(opponentPercentage * 100).toInt()}%)',
+                    '$_opponentCorrectAnswers/$_totalQuestions (${_opponentPercentage.toStringAsFixed(1)}%)',
                     style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontWeight: FontWeight.bold,
@@ -579,7 +622,7 @@ class _DuelResultScreenState extends State<DuelResultScreen>
               ),
               const SizedBox(height: 8),
               LinearProgressIndicator(
-                value: opponentPercentage,
+                value: _opponentPercentage / 100,
                 backgroundColor: Colors.white.withOpacity(0.2),
                 valueColor:
                     const AlwaysStoppedAnimation<Color>(AppTheme.textSecondary),

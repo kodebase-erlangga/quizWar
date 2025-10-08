@@ -516,7 +516,8 @@ class DuelService {
       final scoreField = isChallenger ? 'challengerScore' : 'challengedScore';
       final answers = data[answersField] as Map<String, dynamic>? ?? {};
 
-      int totalScore = 0;
+      int correctAnswers = 0;
+      int totalQuestions = questions.length;
 
       for (int i = 0; i < questions.length; i++) {
         final question = questions[i] as Map<String, dynamic>;
@@ -528,20 +529,28 @@ class DuelService {
           final correctAnswer = question['correct'] as int? ?? 0;
 
           if (selectedAnswer == correctAnswer) {
-            // Correct answer: base score + time bonus
-            final timeSpent = answer['timeSpent'] as int? ?? 20;
-            final timeLimit = 20; // 20 seconds per question
-            final timeBonus = (timeLimit - timeSpent).clamp(0, timeLimit);
-            totalScore += 100 + timeBonus;
+            correctAnswers++;
           }
         }
       }
 
+      // Simple scoring: 10 points per correct answer
+      int totalScore = correctAnswers * 10;
+
+      // Calculate percentage (0-100)
+      double percentage =
+          totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
       print(
-          '📊 Calculated score for ${isChallenger ? 'challenger' : 'challenged'}: $totalScore');
+          '📊 Score for ${isChallenger ? 'challenger' : 'challenged'}: $correctAnswers/$totalQuestions correct = $totalScore points (${percentage.toStringAsFixed(1)}%)');
 
       await _firestore.collection('duels').doc(duelId).update({
         scoreField: totalScore,
+        '${isChallenger ? 'challenger' : 'challenged'}CorrectAnswers':
+            correctAnswers,
+        '${isChallenger ? 'challenger' : 'challenged'}TotalQuestions':
+            totalQuestions,
+        '${isChallenger ? 'challenger' : 'challenged'}Percentage': percentage,
       });
 
       // Check if both players finished

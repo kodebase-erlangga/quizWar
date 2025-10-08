@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'screens/splash_screen.dart';
 import 'screens/auth_screen.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
@@ -48,7 +49,7 @@ class QuizWarApp extends StatelessWidget {
       themeMode: ThemeMode.system,
 
       // Navigation configuration
-      home: const AuthScreen(),
+      home: const SplashScreen(),
 
       // Error handling for routes
       onUnknownRoute: (settings) {
