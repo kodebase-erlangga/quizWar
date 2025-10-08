@@ -53,6 +53,11 @@ class QuestionService {
       final questionId = _generateQuestionId(question.subject, question.grade);
       final bankId = '${question.subject}${question.grade}$_bankSuffix';
 
+      print('🔍 Creating question in bank: $bankId');
+
+      // Ensure question bank document exists and is properly configured
+      await _ensureQuestionBankExists(bankId, question.subject, question.grade);
+
       // Save to Firestore question bank
       await _firestore
           .collection('questionBanks')
@@ -61,11 +66,17 @@ class QuestionService {
           .doc(questionId)
           .set(question.toFirestore());
 
+      print('✅ Question created with ID: $questionId');
+
+      // Update question bank metadata
+      await _updateQuestionBankMetadata(bankId);
+
       // Update user's question count
       await _updateUserQuestionCount();
 
       return questionId;
     } catch (e) {
+      print('❌ Error creating question: $e');
       throw Exception('Failed to create question: $e');
     }
   }
@@ -76,6 +87,61 @@ class QuestionService {
   ///
   /// Format: {SubjectCode}_{Grade}_{Timestamp}
   /// Example: M_7_12345678
+  // Helper method to ensure question bank document exists
+  Future<void> _ensureQuestionBankExists(
+      String bankId, String subject, String grade) async {
+    try {
+      final bankDoc =
+          await _firestore.collection('questionBanks').doc(bankId).get();
+
+      if (!bankDoc.exists) {
+        print('📝 Creating new question bank: $bankId');
+        await _firestore.collection('questionBanks').doc(bankId).set({
+          'id': bankId,
+          'name': '${subject} Kelas $grade',
+          'subject': subject,
+          'grade': grade,
+          'description': 'Kumpulan soal $subject untuk kelas $grade',
+          'totalQuestions': 0,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'isActive': true,
+          'isUserGenerated': true,
+        });
+        print('✅ Question bank created: $bankId');
+      }
+    } catch (e) {
+      print('❌ Error ensuring question bank exists: $e');
+      throw Exception('Failed to create question bank: $e');
+    }
+  }
+
+  // Helper method to update question bank metadata
+  Future<void> _updateQuestionBankMetadata(String bankId) async {
+    try {
+      // Count total questions in the bank
+      final questionsSnapshot = await _firestore
+          .collection('questionBanks')
+          .doc(bankId)
+          .collection('items')
+          .get();
+
+      final totalQuestions = questionsSnapshot.docs.length;
+
+      // Update the question bank document with current stats
+      await _firestore.collection('questionBanks').doc(bankId).update({
+        'totalQuestions': totalQuestions,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print(
+          '📊 Updated question bank metadata: $bankId (Total: $totalQuestions)');
+    } catch (e) {
+      print('❌ Error updating question bank metadata: $e');
+      // Don't throw here as the question was already created successfully
+    }
+  }
+
   String _generateQuestionId(String subject, String grade) {
     final subjectCode = _getSubjectCode(subject);
     final timestamp = DateTime.now()

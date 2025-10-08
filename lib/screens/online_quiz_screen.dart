@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../core/services/online_quiz_service.dart';
 import '../core/services/auth_service.dart';
 import 'online_quiz_play_screen.dart';
@@ -61,9 +60,6 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
       print(
           '✅ OnlineQuizScreen: User authenticated, fetching question banks...');
 
-      // TEMPORARY: Create missing question banks if they don't exist
-      await _createMissingQuestionBanks();
-
       final questionBanks =
           await _onlineQuizService.getAvailableQuestionBanks();
 
@@ -80,211 +76,15 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
       });
 
       print('✅ OnlineQuizScreen: State updated, UI should refresh now');
+      print('🎨 DEBUG: _questionBanks.length = ${_questionBanks.length}');
+      print('🎨 DEBUG: _isLoading = $_isLoading');
+      print('🎨 DEBUG: _error = $_error');
     } catch (e) {
       print('❌ OnlineQuizScreen: Error loading question banks: $e');
       setState(() {
         _error = e.toString();
         _isLoading = false;
       });
-    }
-  }
-
-  /// TEMPORARY: Create missing question banks for testing
-  Future<void> _createMissingQuestionBanks() async {
-    try {
-      print('🔧 Creating missing question banks if needed...');
-      final firestore = FirebaseFirestore.instance;
-
-      // Create Matematika5-main if missing
-      await _createQuestionBankIfMissing(
-        firestore,
-        'Matematika5-main',
-        'Matematika Kelas 5',
-        'Kumpulan soal matematika untuk kelas 5',
-        'Matematika',
-        '5',
-      );
-
-      // Create General7-main if missing
-      await _createQuestionBankIfMissing(
-        firestore,
-        'General7-main',
-        'General Kelas 7',
-        'Kumpulan soal umum untuk kelas 7',
-        'General',
-        '7',
-      );
-    } catch (e) {
-      print('⚠️ Error creating missing question banks: $e');
-    }
-  }
-
-  Future<void> _createQuestionBankIfMissing(
-    FirebaseFirestore firestore,
-    String bankId,
-    String name,
-    String description,
-    String subject,
-    String grade,
-  ) async {
-    try {
-      final doc = await firestore.collection('questionBanks').doc(bankId).get();
-
-      if (!doc.exists) {
-        print('📝 Creating question bank: $bankId');
-        await firestore.collection('questionBanks').doc(bankId).set({
-          'name': name,
-          'description': description,
-          'subject': subject,
-          'grade': grade,
-          'totalQuestions': 3, // Will be updated after adding questions
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        // Add sample questions
-        await _addSampleQuestions(firestore, bankId, subject, grade);
-        print('✅ Created $bankId with sample questions');
-      } else {
-        // Check if it has items
-        final itemsSnapshot = await doc.reference.collection('items').get();
-        if (itemsSnapshot.docs.isEmpty) {
-          print('📝 Adding sample questions to existing bank: $bankId');
-          await _addSampleQuestions(firestore, bankId, subject, grade);
-        }
-        print(
-            'ℹ️ Question bank $bankId already exists with ${itemsSnapshot.docs.length} questions');
-      }
-    } catch (e) {
-      print('❌ Error creating question bank $bankId: $e');
-    }
-  }
-
-  Future<void> _addSampleQuestions(
-    FirebaseFirestore firestore,
-    String bankId,
-    String subject,
-    String grade,
-  ) async {
-    try {
-      List<Map<String, dynamic>> sampleQuestions = [];
-
-      if (subject == 'Matematika' && grade == '5') {
-        sampleQuestions = [
-          {
-            'question': 'Berapa hasil dari 25 × 4?',
-            'options': ['100', '90', '110', '80', '120'],
-            'correctAnswer': 0,
-            'explanation':
-                '25 × 4 = 100. Dapat dihitung dengan 25 × 4 = 25 + 25 + 25 + 25 = 100',
-            'difficulty': 'medium',
-            'subject': subject,
-            'grade': grade,
-            'points': 10,
-            'timeSuggestionSec': 15,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          },
-          {
-            'question':
-                'Jika sebuah segitiga memiliki alas 8 cm dan tinggi 6 cm, berapa luasnya?',
-            'options': ['24 cm²', '48 cm²', '14 cm²', '32 cm²', '16 cm²'],
-            'correctAnswer': 0,
-            'explanation':
-                'Luas segitiga = ½ × alas × tinggi = ½ × 8 × 6 = 24 cm²',
-            'difficulty': 'medium',
-            'subject': subject,
-            'grade': grade,
-            'points': 15,
-            'timeSuggestionSec': 20,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          },
-          {
-            'question': 'Berapa hasil dari 144 ÷ 12?',
-            'options': ['12', '10', '14', '11', '13'],
-            'correctAnswer': 0,
-            'explanation': '144 ÷ 12 = 12. Dapat dicek dengan 12 × 12 = 144',
-            'difficulty': 'easy',
-            'subject': subject,
-            'grade': grade,
-            'points': 10,
-            'timeSuggestionSec': 15,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          }
-        ];
-      } else if (subject == 'General' && grade == '7') {
-        sampleQuestions = [
-          {
-            'question': 'Siapa presiden pertama Indonesia?',
-            'options': [
-              'Soekarno',
-              'Soeharto',
-              'B.J. Habibie',
-              'Megawati',
-              'SBY'
-            ],
-            'correctAnswer': 0,
-            'explanation':
-                'Soekarno adalah presiden pertama Republik Indonesia yang menjabat dari 1945-1967',
-            'difficulty': 'easy',
-            'subject': subject,
-            'grade': grade,
-            'points': 10,
-            'timeSuggestionSec': 15,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          },
-          {
-            'question': 'Apa ibu kota Indonesia?',
-            'options': ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang'],
-            'correctAnswer': 0,
-            'explanation':
-                'Jakarta adalah ibu kota negara Indonesia sejak kemerdekaan',
-            'difficulty': 'easy',
-            'subject': subject,
-            'grade': grade,
-            'points': 5,
-            'timeSuggestionSec': 10,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          },
-          {
-            'question': 'Berapa jumlah provinsi di Indonesia saat ini?',
-            'options': ['34', '32', '35', '33', '36'],
-            'correctAnswer': 0,
-            'explanation':
-                'Indonesia memiliki 34 provinsi termasuk DKI Jakarta, DI Yogyakarta, dan Aceh',
-            'difficulty': 'medium',
-            'subject': subject,
-            'grade': grade,
-            'points': 15,
-            'timeSuggestionSec': 20,
-            'createdBy': 'system',
-            'createdAt': FieldValue.serverTimestamp(),
-          }
-        ];
-      }
-
-      // Add questions to Firestore
-      for (final questionData in sampleQuestions) {
-        await firestore
-            .collection('questionBanks')
-            .doc(bankId)
-            .collection('items')
-            .add(questionData);
-      }
-
-      // Update totalQuestions count
-      await firestore.collection('questionBanks').doc(bankId).update({
-        'totalQuestions': sampleQuestions.length,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
-
-      print('📝 Added ${sampleQuestions.length} sample questions to $bankId');
-    } catch (e) {
-      print('❌ Error adding sample questions to $bankId: $e');
     }
   }
 
@@ -352,7 +152,11 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
   }
 
   Widget _buildBody() {
+    print(
+        '🖥️ DEBUG: Building UI - isLoading: $_isLoading, error: $_error, questionBanks.length: ${_questionBanks.length}');
+
     if (_isLoading) {
+      print('🔄 DEBUG: Showing loading indicator');
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -366,6 +170,7 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
     }
 
     if (_error != null) {
+      print('❌ DEBUG: Showing error screen');
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -395,6 +200,7 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
     }
 
     if (_questionBanks.isEmpty) {
+      print('📭 DEBUG: Showing empty state');
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -421,6 +227,9 @@ class _OnlineQuizScreenState extends State<OnlineQuizScreen> {
         ),
       );
     }
+
+    print(
+        '📋 DEBUG: Showing question banks list with ${_questionBanks.length} items');
 
     return RefreshIndicator(
       onRefresh: _loadQuestionBanks,

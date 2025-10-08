@@ -12,11 +12,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 // Core services
 import '../core/services/auth_service.dart';
+import '../core/services/nickname_service_simulation.dart';
+import '../core/services/notification_service.dart';
 
 // UI components
 import '../core/theme/app_theme.dart';
 import '../core/constants/app_constants.dart';
-import '../widgets/buttons.dart';
 
 // Screens
 import 'auth_screen.dart';
@@ -27,6 +28,7 @@ import 'online_quiz_screen.dart';
 import 'profile_screen.dart';
 import 'upload_questions_screen.dart';
 import 'online_users_screen.dart';
+import 'notifications_screen.dart';
 
 /// Main home screen with navigation options
 class HomeScreen extends StatefulWidget {
@@ -41,6 +43,9 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   // Services
   final AuthService _authService = AuthService();
+  final NicknameServiceSimulation _nicknameService =
+      NicknameServiceSimulation();
+  final NotificationService _notificationService = NotificationService();
 
   // State variables
   GoogleSignInAccount? _currentUser;
@@ -57,6 +62,8 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _initializeAnimations();
     _loadUserData();
+    _checkUserNickname();
+    _initializeNotifications();
   }
 
   @override
@@ -64,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen>
     super.didChangeDependencies();
     // Refresh user data when screen becomes active again
     _loadUserData();
+    _checkUserNickname();
   }
 
   void _initializeAnimations() {
@@ -91,6 +99,13 @@ class _HomeScreenState extends State<HomeScreen>
     _animationController.forward();
   }
 
+  void _initializeNotifications() {
+    // Start listening to notifications only for logged-in users
+    if (!_authService.isAnonymous) {
+      _notificationService.startListening();
+    }
+  }
+
   Future<void> _loadUserData() async {
     try {
       // Refresh the auth service state first
@@ -111,6 +126,207 @@ class _HomeScreenState extends State<HomeScreen>
         setState(() {});
       }
     }
+  }
+
+  Future<void> _checkUserNickname() async {
+    // Only check for non-anonymous users
+    if (!_authService.isAnonymous) {
+      try {
+        // Check if user has nickname using the nickname service
+        final currentNickname = await _nicknameService.getCurrentUserNickname();
+
+        // Only show popup if user doesn't have a nickname
+        if (currentNickname == null && mounted) {
+          // Show popup for new user to set nickname
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              _showNicknameRequiredDialog();
+            }
+          });
+        }
+      } catch (e) {
+        print('Error checking user nickname: $e');
+        // In case of error, don't show the popup to avoid annoyance
+      }
+    }
+  }
+
+  void _showNicknameRequiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon with gradient background
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFFFF6B35),
+                      Color(0xFFFF8A50),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(40),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF6B35).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.person_add_rounded,
+                  color: Colors.white,
+                  size: 40,
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Title
+              const Text(
+                'Selamat Datang! 👋',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2D3748),
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 8),
+
+              // Subtitle
+              const Text(
+                'Nickname Diperlukan',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF4A5568),
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Description
+              const Text(
+                'Untuk bermain online dan berinteraksi dengan pemain lain, kamu perlu memilih nickname unik terlebih dahulu.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF718096),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Action button
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _navigateToClaimNickname();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF6B35),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    shadowColor: const Color(0xFFFF6B35).withOpacity(0.3),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.edit_rounded,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Pilih Nickname',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Secondary info
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF6B35).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.info_outline_rounded,
+                        size: 16,
+                        color: Color(0xFFFF6B35),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Nickname hanya bisa dipilih sekali',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF718096),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _handleSignOut() async {
@@ -248,6 +464,19 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void _navigateToNotifications() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const NotificationsScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: AppConstants.mediumAnimation,
+      ),
+    );
+  }
+
   void _navigateToAuth() {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
@@ -291,106 +520,219 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _animationController.dispose();
+    _notificationService.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: _buildAppBar(),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFFF8F3), // Very light orange
+              Color(0xFFFFECDC), // Light orange
+              Colors.white,
+            ],
+            stops: [0.0, 0.3, 1.0],
+          ),
         ),
         child: SafeArea(
           child: FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
               position: _slideAnimation,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: _buildBody(),
-                  ),
-                ],
-              ),
+              child: _buildBody(),
             ),
           ),
         ),
-      ),
-      // Developer mode: Long press for upload access
-      floatingActionButton: FloatingActionButton(
-        onPressed: null, // No single tap action
-        child: GestureDetector(
-          onLongPress: _navigateToUploadQuestions,
-          child: const Icon(Icons.developer_mode),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.largePadding),
-      child: Row(
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      automaticallyImplyLeading: false,
+      title: Row(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _authService.isAnonymous
-                      ? 'Welcome, Guest!'
-                      : 'Welcome back!',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _authService.isAnonymous
-                      ? 'Guest User'
-                      : _authService.userDisplayName ??
-                          _currentUser?.displayName ??
-                          'User',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+          // App Logo
+          Container(
+            height: 40,
+            width: 40,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-          ),
-          GestureDetector(
-            onTap: () => _showUserProfile(),
-            child: Container(
-              height: 50,
-              width: 50,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(
-                  color: AppTheme.primaryColor,
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(23),
-                child: _buildProfileImage(),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                'assets/images/apkLogo.png',
+                fit: BoxFit.contain,
               ),
             ),
           ),
+          // const SizedBox(width: 12),
+          // Text(
+          //   AppConstants.appName,
+          //   style: const TextStyle(
+          //     fontSize: 20,
+          //     fontWeight: FontWeight.bold,
+          //     color: Color(0xFF2D3748),
+          //   ),
+          // ),
         ],
       ),
+      actions: [
+        // Notification Icon
+        StreamBuilder<List<AppNotification>>(
+          stream: _notificationService.notificationsStream,
+          builder: (context, snapshot) {
+            final notifications = snapshot.data ?? [];
+            final unreadCount = notifications.where((n) => !n.isRead).length;
+
+            return IconButton(
+              onPressed: () {
+                _navigateToNotifications();
+              },
+              icon: Stack(
+                children: [
+                  const Icon(
+                    Icons.notifications_outlined,
+                    color: Color(0xFF2D3748),
+                    size: 24,
+                  ),
+                  // Notification dot with count
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6B35),
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unreadCount > 99 ? '99+' : unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        // Settings Dropdown
+        PopupMenuButton<String>(
+          onSelected: _handleMenuSelection,
+          icon: const Icon(
+            Icons.settings_outlined,
+            color: Color(0xFF2D3748),
+            size: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(Icons.settings, color: Color(0xFF718096)),
+                  SizedBox(width: 12),
+                  Text('Pengaturan'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'profile',
+              child: Row(
+                children: [
+                  Icon(Icons.person_outline, color: Color(0xFF718096)),
+                  SizedBox(width: 12),
+                  Text('Profile'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'nickname',
+              child: Row(
+                children: [
+                  Icon(Icons.edit, color: Color(0xFF718096)),
+                  SizedBox(width: 12),
+                  Text('Edit Nickname'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'create',
+              child: Row(
+                children: [
+                  Icon(Icons.add_circle_outline, color: Color(0xFF718096)),
+                  SizedBox(width: 12),
+                  Text('Buat Soal'),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+            const PopupMenuItem(
+              value: 'logout',
+              child: Row(
+                children: [
+                  Icon(Icons.logout, color: Colors.red),
+                  SizedBox(width: 12),
+                  Text('Log Out', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 8),
+      ],
     );
+  }
+
+  void _handleMenuSelection(String value) {
+    switch (value) {
+      case 'settings':
+        _showComingSoon();
+        break;
+      case 'profile':
+        _showUserProfile();
+        break;
+      case 'nickname':
+        _navigateToClaimNickname();
+        break;
+      case 'create':
+        _navigateToUploadQuestions();
+        break;
+      case 'logout':
+        _handleSignOut();
+        break;
+    }
   }
 
   Widget _buildDefaultAvatar() {
@@ -444,27 +786,71 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildBody() {
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: AppConstants.largePadding),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _authService.isAnonymous ? 'Offline Quiz Mode' : 'Ready to Quiz?',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: AppTheme.textPrimary,
-                ),
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
-          Text(
-            _authService.isAnonymous
-                ? 'Choose a category and start your offline quiz!'
-                : 'Choose a category and start challenging yourself!',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-          ),
-          const SizedBox(height: 32),
+          // Welcome Section
+          // Container(
+          //   width: double.infinity,
+          //   padding: const EdgeInsets.all(20),
+          //   decoration: BoxDecoration(
+          //     gradient: const LinearGradient(
+          //       begin: Alignment.topLeft,
+          //       end: Alignment.bottomRight,
+          //       colors: [
+          //         Color(0xFFFF6B35),
+          //         Color(0xFFFF8A50),
+          //       ],
+          //     ),
+          //     borderRadius: BorderRadius.circular(16),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: const Color(0xFFFF6B35).withOpacity(0.3),
+          //         blurRadius: 12,
+          //         offset: const Offset(0, 4),
+          //       ),
+          //     ],
+          //   ),
+          //   child: Column(
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       Text(
+          //         _authService.isAnonymous
+          //             ? 'Selamat Datang, Guest!'
+          //             : 'Selamat Datang Kembali!',
+          //         style: const TextStyle(
+          //           fontSize: 20,
+          //           fontWeight: FontWeight.bold,
+          //           color: Colors.white,
+          //         ),
+          //       ),
+          //       const SizedBox(height: 4),
+          //       Text(
+          //         _authService.isAnonymous
+          //             ? 'Pengguna Tamu'
+          //             : _authService.userDisplayName ??
+          //                 _currentUser?.displayName ??
+          //                 'User',
+          //         style: const TextStyle(
+          //           fontSize: 16,
+          //           color: Colors.white70,
+          //         ),
+          //       ),
+          //       const SizedBox(height: 12),
+          //       Text(
+          //         'Siap untuk menguji kemampuanmu? 🧠',
+          //         style: const TextStyle(
+          //           fontSize: 14,
+          //           color: Colors.white70,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+
+          // const SizedBox(height: 24),
+
           // Offline mode notice for anonymous users
           if (_authService.isAnonymous) ...[
             Container(
@@ -472,8 +858,7 @@ class _HomeScreenState extends State<HomeScreen>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.orange.shade50,
-                borderRadius:
-                    BorderRadius.circular(AppConstants.defaultBorderRadius),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange.shade200),
               ),
               child: Row(
@@ -489,20 +874,20 @@ class _HomeScreenState extends State<HomeScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'You\'re in Offline Mode',
-                          style:
-                              Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Colors.orange.shade800,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          'Mode Offline',
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'All quizzes work without internet connection!',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.orange.shade700,
-                                  ),
+                          'Semua kuis bisa dimainkan tanpa internet!',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 14,
+                          ),
                         ),
                       ],
                     ),
@@ -512,7 +897,19 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 24),
           ],
-          // Quiz categories button for anonymous users, regular grid for Google users
+
+          // Quiz Categories Section
+          Text(
+            'Kategori Kuis',
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2D3748),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quiz categories for anonymous users vs full grid for logged in users
           if (_authService.isAnonymous)
             Expanded(
               child: Center(
@@ -523,12 +920,18 @@ class _HomeScreenState extends State<HomeScreen>
                       width: 120,
                       height: 120,
                       decoration: BoxDecoration(
-                        gradient: AppTheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(
-                            AppConstants.largeBorderRadius),
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Color(0xFFFF6B35),
+                            Color(0xFFFF8A50),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            color: const Color(0xFFFF6B35).withOpacity(0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -541,29 +944,44 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      'Start Your Quiz Journey',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: AppTheme.textPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    const Text(
+                      'Mulai Petualangan Kuis',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D3748),
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      'Choose from Science, History, Sports, and Movies',
+                    const Text(
+                      'Pilih dari Sains, Sejarah, Olahraga, dan Film',
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF718096),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: PrimaryButton(
-                        text: 'Browse Quiz Categories',
+                      height: 56,
+                      child: ElevatedButton(
                         onPressed: _navigateToOfflineCategories,
-                        backgroundColor: AppTheme.primaryColor,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF6B35),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Jelajahi Kategori Kuis',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -574,157 +992,125 @@ class _HomeScreenState extends State<HomeScreen>
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                crossAxisSpacing: AppConstants.defaultPadding,
-                mainAxisSpacing: AppConstants.defaultPadding,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.1,
                 children: [
-                  _buildQuizCard(
-                    'Science',
-                    Icons.science,
-                    Colors.blue,
+                  _buildModernQuizCard(
+                    'Sains',
+                    Icons.science_outlined,
+                    const Color(0xFF3B82F6),
                     () => _showComingSoon(),
                   ),
-                  _buildQuizCard(
-                    'History',
-                    Icons.history_edu,
-                    Colors.orange,
+                  _buildModernQuizCard(
+                    'Sejarah',
+                    Icons.history_edu_outlined,
+                    const Color(0xFFEF4444),
                     () => _showComingSoon(),
                   ),
-                  _buildQuizCard(
-                    'Sports',
-                    Icons.sports_soccer,
-                    Colors.green,
+                  _buildModernQuizCard(
+                    'Olahraga',
+                    Icons.sports_soccer_outlined,
+                    const Color(0xFF10B981),
                     () => _showComingSoon(),
                   ),
-                  _buildQuizCard(
-                    'Movies',
-                    Icons.movie,
-                    Colors.purple,
+                  _buildModernQuizCard(
+                    'Film',
+                    Icons.movie_outlined,
+                    const Color(0xFF8B5CF6),
                     () => _showComingSoon(),
                   ),
-                  _buildQuizCard(
-                    'Friends',
-                    Icons.people,
-                    Colors.pink,
+                  _buildModernQuizCard(
+                    'Teman',
+                    Icons.people_outline,
+                    const Color(0xFFEC4899),
                     _navigateToFriends,
                   ),
-                  _buildQuizCard(
-                    'Online Quiz',
-                    Icons.cloud,
-                    Colors.indigo,
+                  _buildModernQuizCard(
+                    'Kuis Online',
+                    Icons.cloud_outlined,
+                    const Color(0xFF6366F1),
                     _navigateToOnlineQuiz,
                   ),
-                  _buildQuizCard(
+                  _buildModernQuizCard(
                     'Duel Online',
-                    Icons.sports_esports,
-                    Colors.deepPurple,
+                    Icons.sports_esports_outlined,
+                    const Color(0xFF7C3AED),
                     _navigateToOnlineDuel,
                   ),
+                  _buildModernQuizCard(
+                    'Offline Quiz',
+                    Icons.offline_bolt_outlined,
+                    const Color(0xFFF59E0B),
+                    _navigateToOfflineCategories,
+                  ),
                 ],
               ),
             ),
+
           const SizedBox(height: 20),
-          // Tombol Pilih Nickname untuk user yang sudah login tapi belum punya nickname
-          if (!_authService.isAnonymous) ...[
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius:
-                    BorderRadius.circular(AppConstants.defaultBorderRadius),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.person_outline,
-                        color: Colors.blue.shade600,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Belum Punya Nickname?',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    color: Colors.blue.shade800,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Pilih nickname unik untuk bermain online!',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.blue.shade700,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _navigateToClaimNickname,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(
-                              AppConstants.defaultBorderRadius),
-                        ),
-                      ),
-                      child: Text(
-                        'Pilih Nickname',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
+
           // Show link with Google button for anonymous users
           if (_authService.isAnonymous) ...[
-            PrimaryButton(
-              text: AppConstants.linkWithGoogle,
-              onPressed: _handleLinkWithGoogle,
-              isLoading: _isLinkingAccount,
-              backgroundColor: AppTheme.primaryColor,
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _handleLinkWithGoogle,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF2D3748),
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isLinkingAccount
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Color(0xFFFF6B35)),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.network(
+                            'https://developers.google.com/identity/images/g-logo.png',
+                            height: 20,
+                            width: 20,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.g_mobiledata,
+                                size: 20,
+                                color: Color(0xFF4285F4),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Hubungkan dengan Google',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
-            const SizedBox(height: AppConstants.defaultPadding),
+            const SizedBox(height: 16),
           ],
-          PrimaryButton(
-            text: AppConstants.signOut,
-            onPressed: _handleSignOut,
-            isLoading: _isSigningOut,
-            backgroundColor: Colors.red,
-          ),
-          const SizedBox(height: AppConstants.defaultPadding),
         ],
       ),
     );
   }
 
-  Widget _buildQuizCard(
+  Widget _buildModernQuizCard(
     String title,
     IconData icon,
     Color color,
@@ -735,11 +1121,11 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(AppConstants.largeBorderRadius),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -748,8 +1134,8 @@ class _HomeScreenState extends State<HomeScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              height: 60,
-              width: 60,
+              height: 64,
+              width: 64,
               decoration: BoxDecoration(
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -763,10 +1149,12 @@ class _HomeScreenState extends State<HomeScreen>
             const SizedBox(height: 12),
             Text(
               title,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
-                  ),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF2D3748),
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

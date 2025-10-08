@@ -6,179 +6,63 @@ void main() async {
 
   final firestore = FirebaseFirestore.instance;
 
-  print('Creating missing question banks and sample questions...');
+  print('🔍 Checking existing question banks in database...');
+  print('===============================================');
 
   try {
-    // Create Matematika5-main question bank if it doesn't exist
-    await createQuestionBankIfNotExists(
-      firestore,
-      'Matematika5-main',
-      'Matematika Kelas 5',
-      'Kumpulan soal matematika untuk kelas 5',
-      'Matematika',
-      '5',
-    );
-
-    // Create General7-main question bank if it doesn't exist
-    await createQuestionBankIfNotExists(
-      firestore,
-      'General7-main',
-      'General Kelas 7',
-      'Kumpulan soal umum untuk kelas 7',
-      'General',
-      '7',
-    );
-
-    // Add sample questions to General7-main
-    await addSampleQuestionsToBank(firestore, 'General7-main');
-
-    // Add sample questions to Matematika5-main
-    await addSampleQuestionsToBank(firestore, 'Matematika5-main');
-
-    // Verify all question banks
+    // Just verify what question banks exist - don't create hard-coded ones
     await verifyQuestionBanks(firestore);
+
+    print('\n✅ Database check complete!');
+    print(
+        'ℹ️  The app will automatically create question banks when users add questions.');
+    print('ℹ️  No manual setup needed - the system is now fully automated!');
   } catch (e) {
     print('Error: $e');
   }
 }
 
-Future<void> createQuestionBankIfNotExists(
-  FirebaseFirestore firestore,
-  String bankId,
-  String name,
-  String description,
-  String subject,
-  String grade,
-) async {
-  final doc = await firestore.collection('questionBanks').doc(bankId).get();
+Future<void> verifyQuestionBanks(FirebaseFirestore firestore) async {
+  print('\n📊 CURRENT QUESTION BANKS IN DATABASE:');
+  print('======================================');
 
-  if (!doc.exists) {
-    await firestore.collection('questionBanks').doc(bankId).set({
-      'name': name,
-      'description': description,
-      'subject': subject,
-      'grade': grade,
-      'totalQuestions': 0,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-    print('Created question bank: $bankId');
-  } else {
-    print('Question bank already exists: $bankId');
-  }
-}
+  final snapshot = await firestore.collection('questionBanks').get();
+  print('📋 Total question banks found: ${snapshot.docs.length}');
 
-Future<void> addSampleQuestionsToBank(
-    FirebaseFirestore firestore, String bankId) async {
-  final items = await firestore
-      .collection('questionBanks')
-      .doc(bankId)
-      .collection('items')
-      .get();
-
-  if (items.docs.isNotEmpty) {
-    print('Questions already exist in $bankId, skipping sample creation');
+  if (snapshot.docs.isEmpty) {
+    print('\n📭 No question banks found in database yet.');
+    print('ℹ️  This is normal for a fresh installation.');
+    print(
+        'ℹ️  Question banks will be created automatically when users add questions.');
     return;
   }
-
-  List<Map<String, dynamic>> sampleQuestions = [];
-
-  if (bankId == 'General7-main') {
-    sampleQuestions = [
-      {
-        'question': 'Apa ibukota negara Indonesia?',
-        'options': ['Jakarta', 'Surabaya', 'Bandung', 'Medan'],
-        'correctAnswer': 0,
-        'explanation': 'Jakarta adalah ibukota negara Indonesia',
-        'difficulty': 'easy',
-        'subject': 'General',
-        'grade': '7',
-        'points': 10,
-        'timeSuggestionSec': 15,
-        'createdBy': 'system',
-        'createdAt': FieldValue.serverTimestamp(),
-      },
-      {
-        'question': 'Siapa presiden pertama Indonesia?',
-        'options': ['Soeharto', 'Soekarno', 'Habibie', 'Megawati'],
-        'correctAnswer': 1,
-        'explanation': 'Soekarno adalah presiden pertama Indonesia',
-        'difficulty': 'easy',
-        'subject': 'General',
-        'grade': '7',
-        'points': 10,
-        'timeSuggestionSec': 15,
-        'createdBy': 'system',
-        'createdAt': FieldValue.serverTimestamp(),
-      }
-    ];
-  } else if (bankId == 'Matematika5-main') {
-    sampleQuestions = [
-      {
-        'question': 'Hasil dari 25 + 17 adalah?',
-        'options': ['40', '41', '42', '43'],
-        'correctAnswer': 2,
-        'explanation': '25 + 17 = 42',
-        'difficulty': 'easy',
-        'subject': 'Matematika',
-        'grade': '5',
-        'points': 10,
-        'timeSuggestionSec': 20,
-        'createdBy': 'system',
-        'createdAt': FieldValue.serverTimestamp(),
-      },
-      {
-        'question': 'Hasil dari 8 × 7 adalah?',
-        'options': ['54', '55', '56', '57'],
-        'correctAnswer': 2,
-        'explanation': '8 × 7 = 56',
-        'difficulty': 'medium',
-        'subject': 'Matematika',
-        'grade': '5',
-        'points': 15,
-        'timeSuggestionSec': 25,
-        'createdBy': 'system',
-        'createdAt': FieldValue.serverTimestamp(),
-      }
-    ];
-  }
-
-  // Add the sample questions
-  for (int i = 0; i < sampleQuestions.length; i++) {
-    await firestore
-        .collection('questionBanks')
-        .doc(bankId)
-        .collection('items')
-        .add(sampleQuestions[i]);
-  }
-
-  // Update question bank total count
-  await firestore.collection('questionBanks').doc(bankId).update({
-    'totalQuestions': sampleQuestions.length,
-    'updatedAt': FieldValue.serverTimestamp(),
-  });
-
-  print('Added ${sampleQuestions.length} sample questions to $bankId');
-}
-
-Future<void> verifyQuestionBanks(FirebaseFirestore firestore) async {
-  print('\n=== VERIFICATION ===');
-  final snapshot = await firestore.collection('questionBanks').get();
-  print('Total question banks: ${snapshot.docs.length}');
 
   for (final doc in snapshot.docs) {
     final data = doc.data();
     final items = await doc.reference.collection('items').get();
 
-    print('\n--- ${doc.id} ---');
-    print('Name: ${data['name']}');
-    print('Subject: ${data['subject']}');
-    print('Grade: ${data['grade']}');
-    print('Stored Total: ${data['totalQuestions']}');
-    print('Actual Items: ${items.docs.length}');
+    print('\n📚 ${doc.id}:');
+    print('   📛 Name: ${data['name'] ?? 'No name'}');
+    print('   📖 Subject: ${data['subject'] ?? 'No subject'}');
+    print('   🎓 Grade: ${data['grade'] ?? 'No grade'}');
+    print('   📊 Stored Total: ${data['totalQuestions'] ?? 0}');
+    print('   📝 Actual Questions: ${items.docs.length}');
+    print(
+        '   👤 Created by: ${data['isUserGenerated'] == true ? 'User' : 'System'}');
 
     if (items.docs.isNotEmpty) {
-      print('Sample question: ${items.docs.first.data()['question']}');
+      final sampleQuestion = items.docs.first.data();
+      print('   💡 Sample question: "${sampleQuestion['question']}"');
+    }
+
+    // Check for data consistency
+    if (items.docs.length != (data['totalQuestions'] ?? 0)) {
+      print('   ⚠️  Inconsistent count detected - will be auto-fixed by app');
     }
   }
+
+  print('\n🎯 SUMMARY:');
+  print('- Question banks are managed automatically by the app');
+  print('- User-created questions will create new banks as needed');
+  print('- All existing question banks will appear in the online quiz screen');
 }

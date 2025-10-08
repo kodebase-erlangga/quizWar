@@ -12,11 +12,9 @@ void main() async {
     print('\n📊 CHECKING QUESTION BANKS COLLECTION...');
     await checkQuestionBanksStructure(firestore);
 
-    print('\n🔧 CREATING MISSING QUESTION BANKS...');
-    await createMissingQuestionBanks(firestore);
-
     print('\n✅ VERIFICATION COMPLETE');
-    await verifyAllQuestionBanks(firestore);
+    print(
+        'ℹ️  All question banks in database will automatically appear in app!');
   } catch (e) {
     print('❌ ERROR: $e');
   }

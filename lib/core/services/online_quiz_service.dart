@@ -39,8 +39,10 @@ class OnlineQuizService {
       print(
           '🔍 DEBUG: Starting question bank retrieval for user: ${currentUser.uid}');
 
-      final snapshot =
-          await _firestore.collection(_questionBanksCollection).get();
+      final snapshot = await _firestore
+          .collection(_questionBanksCollection)
+          .get(const GetOptions(
+              source: Source.server)); // Force fetch from server, not cache
 
       print(
           '📊 DEBUG: Found ${snapshot.docs.length} documents in questionBanks collection');
@@ -59,9 +61,9 @@ class OnlineQuizService {
       for (final doc in snapshot.docs) {
         try {
           print('\n📄 DEBUG: Processing document ${doc.id}');
-          print('📋 DEBUG: Document data keys: ${doc.data().keys.toList()}');
-
           final data = doc.data();
+          print('📋 DEBUG: Document data keys: ${data.keys.toList()}');
+          print('📝 DEBUG: Full document data: $data');
 
           // Count questions in this bank
           print('🔢 DEBUG: Counting questions in ${doc.id}');
@@ -78,6 +80,8 @@ class OnlineQuizService {
           final dataWithCount = Map<String, dynamic>.from(data);
           dataWithCount['totalQuestions'] = actualQuestionCount;
 
+          print(
+              '🔄 DEBUG: Attempting to parse QuestionBank from document ${doc.id}');
           final questionBank =
               QuestionBank.fromFirestore(doc.id, dataWithCount);
 
@@ -88,11 +92,12 @@ class OnlineQuizService {
 
           questionBanks.add(questionBank);
           successCount++;
-        } catch (e) {
+        } catch (e, stackTrace) {
           errorCount++;
           // Log parsing error but continue with other banks
           print('❌ ERROR: Failed to parse question bank ${doc.id}: $e');
           print('📝 ERROR: Document data was: ${doc.data()}');
+          print('🔍 ERROR: Stack trace: $stackTrace');
 
           // Try to create a minimal question bank even if parsing fails
           try {
